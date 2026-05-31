@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>电话费大王查收</title>
+  <!-- Google Fonts 备用，国内不可用时使用系统字体 -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&family=Liu+Jian+Mao+Cao&display=swap"
+    rel="stylesheet" onerror="this.onerror=null;this.href='';">
+  <style>
+    :root {
+      --cream: #fef9ef;
+      --paper: #f5ecd7;
+      --brown: #5d4037;
+      --dark-brown: #3e2723;
+      --coral: #e8a87c;
+      --light-coral: #f4c7ab;
+      --yellow: #f9d56e;
+      --gold: #f0a500;
+      --soft-blue: #a8d8ea;
+      --warm-pink: #f0a8b8;
+      --green: #a8c97e;
+      --mint: #b8d9c8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(ellipse at 15% 25%, rgba(232, 168, 124, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 55%, rgba(168, 216, 234, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 45% 85%, rgba(240, 168, 184, 0.13) 0%, transparent 55%),
+        radial-gradient(ellipse at 65% 35%, rgba(249, 213, 110, 0.1) 0%, transparent 40%),
+        radial-gradient(ellipse at 30% 70%, rgba(184, 217, 200, 0.1) 0%, transparent 45%);
+      /* 系统字体优先，web字体作为增强 */
+      font-family: 'STKaiti', 'KaiTi', '华文楷体', 'Ma Shan Zheng', 'ZCOOL KuaiLe', serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+      overflow-x: hidden;
+      cursor: default;
+      position: relative;
+    }
+
+    /* 纸张纹理 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== 飘落元素容器 ===== */
+    .floating-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .floating-item {
+      position: absolute;
+      animation: floatDown linear infinite;
+      opacity: 0.65;
+      user-select: none;
+      will-change: transform;
+    }
+
+    @keyframes floatDown {
+      0% {
+        transform: translateY(-8vh) rotate(0deg) translateX(0);
+        opacity: 0;
+      }
+
+      6% {
+        opacity: 0.65;
+      }
+
+      88% {
+        opacity: 0.55;
+      }
+
+      100% {
+        transform: translateY(106vh) rotate(380deg) translateX(35px);
+        opacity: 0;
+      }
+    }
+
+    /* ===== 音乐面板 ===== */
+    .music-toggle {
+      position: fixed;
+      top: 28px;
+      right: 28px;
+      z-index: 100;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid var(--coral);
+      background: var(--cream);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 2px 12px rgba(94, 64, 55, 0.1);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      color: var(--coral);
+      outline: none;
+    }
+
+    .music-toggle:hover {
+      transform: scale(1.08);
+      box-shadow: 0 4px 20px rgba(94, 64, 55, 0.18);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .music-toggle.playing {
+      animation: vinylSpin 3s linear infinite;
+      border-color: var(--gold);
+      color: var(--gold);
+      background: #fff9f0;
+      box-shadow: 0 2px 18px rgba(240, 165, 0, 0.2);
+    }
+
+    @keyframes vinylSpin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* 音乐播放器卡片 */
+    .music-panel {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(140px);
+      z-index: 99;
+      background: var(--cream);
+      border-radius: 16px;
+      padding: 20px 20px 14px;
+      box-shadow: 0 4px 24px rgba(94, 64, 55, 0.15);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(232, 168, 124, 0.2);
+      min-width: 320px;
+    }
+
+    .music-panel.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .music-panel .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .music-panel .song-info {
+      font-family: 'STKaiti', 'KaiTi', 'Ma Shan Zheng', serif;
+      font-size: 0.9em;
+      color: var(--brown);
+    }
+
+    .music-panel .song-info .song-title {
+      font-weight: bold;
+      font-size: 1.05em;
+    }
+
+    .music-panel .song-info .artist {
+      opacity: 0.6;
+      font-size: 0.82em;
+    }
+
+    .music-panel .open-link {
+      color: var(--coral);
+      text-decoration: none;
+      font-size: 0.75em;
+      padding: 3px 10px;
+      border: 1px solid var(--coral);
+      border-radius: 20px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-family: 'STKaiti', 'KaiTi', serif;
+    }
+
+    .music-panel .open-link:hover {
+      background: var(--coral);
+      color: #fff;
+    }
+
+    .music-panel .close-panel {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--brown);
+      opacity: 0.4;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .music-panel .close-panel:hover {
+      opacity: 0.8;
+    }
+
+    .music-panel audio {
+      width: 100%;
+      height: 40px;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .music-panel audio::-webkit-media-controls-panel {
+      background: #fef9ef;
+    }
+
+    .music-panel audio::-webkit-media-controls-play-button {
+      background-color: var(--coral);
+      border-radius: 50%;
+    }
+
+    /* ===== 主体卡片 ===== */
+    .main-card {
+      position: relative;
+      z-index: 2;
+      max-width: 660px;
+      width: 100%;
+      background: var(--cream);
+      border-radius: 6px;
+      padding: 54px 44px 42px;
+      box-shadow:
+        0 2px 16px rgba(94, 64, 55, 0.07),
+        0 6px 32px rgba(94, 64, 55, 0.05),
+        0 0 0 1px rgba(94, 64, 55, 0.03);
+      /* 手撕纸边缘 */
+      clip-path: polygon(2% 0, 7% 0.8%, 14% 0, 21% 1.5%, 28% 0, 35% 0.6%, 42% 0, 50% 1.2%,
+          57% 0, 64% 0.5%, 71% 0, 78% 1%, 85% 0, 92% 0.7%, 98% 0, 100% 0,
+          100% 97.5%, 97% 100%, 92% 98%, 85% 100%, 78% 98.5%, 70% 100%,
+          62% 98%, 54% 100%, 46% 98.5%, 38% 100%, 30% 98%, 23% 100%,
+          16% 98.5%, 9% 100%, 3% 98%, 0 100%, 0 1.5%);
+      animation: cardEnter 0.6s ease-out;
+    }
+
+    @keyframes cardEnter {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 卡片虚线边框 */
+    .main-card::before {
+      content: '';
+      position: absolute;
+      top: 22px;
+      left: 22px;
+      right: 22px;
+      bottom: 22px;
+      border: 1.5px dashed rgba(232, 168, 124, 0.25);
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    /* ===== 胶带 ===== */
+    .tape {
+      position: absolute;
+      width: 72px;
+      height: 26px;
+      background: rgba(249, 213, 110, 0.45);
+      z-index: 3;
+      border-radius: 1px;
+    }
+
+    .tape.top-left {
+      top: -7px;
+      left: 34px;
+      transform: rotate(-4deg);
+    }
+
+    .tape.top-right {
+      top: -7px;
+      right: 34px;
+      transform: rotate(3deg);
+    }
+
+    .tape::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(90deg,
+          transparent, transparent 6px,
+          rgba(255, 255, 255, 0.25) 6px, rgba(255, 255, 255, 0.25) 7px);
+    }
+
+    /* ===== 标题区域 ===== */
+    .header-section {
+      text-align: center;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    /* CSS 太阳 + 光芒 */
+    .sun-decor {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      background: radial-gradient(circle at 40% 35%, #fff8c0 0%, var(--yellow) 40%, var(--gold) 100%);
+      border-radius: 50%;
+      position: relative;
+      margin-bottom: 12px;
+      box-shadow: 0 0 28px rgba(249, 213, 110, 0.45);
+      animation: sunGlow 2.2s ease-in-out infinite alternate;
+    }
+
+    .sun-decor::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 90px;
+      height: 90px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: transparent;
+      box-shadow:
+        0 -32px 0 -4px rgba(249, 213, 110, 0.35),
+        22px -22px 0 -6px rgba(249, 213, 110, 0.25),
+        30px 0 0 -5px rgba(249, 213, 110, 0.3),
+        22px 22px 0 -6px rgba(249, 213, 110, 0.25),
+        0 30px 0 -5px rgba(249, 213, 110, 0.28),
+        -22px 22px 0 -6px rgba(249, 213, 110, 0.22),
+        -30px 0 0 -5px rgba(249, 213, 110, 0.3),
+        -22px -22px 0 -6px rgba(249, 213, 110, 0.22);
+      animation: sunRays 2.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes sunGlow {
+      from {
+        box-shadow: 0 0 22px rgba(249, 213, 110, 0.35);
+      }
+
+      to {
+        box-shadow: 0 0 38px rgba(249, 213, 110, 0.6), 0 0 60px rgba(240, 168, 184, 0.18);
+      }
+    }
+
+    @keyframes sunRays {
+      from {
+        transform: translate(-50%, -50%) scale(0.95) rotate(0deg);
+        opacity: 0.6;
+      }
+
+      to {
+        transform: translate(-50%, -50%) scale(1.05) rotate(5deg);
+        opacity: 1;
+      }
+    }
+
+    .greeting {
+      font-family: 'STKaiti', 'KaiTi', '华文楷体', 'Liu Jian Mao Cao', 'Ma Shan Zheng', cursive;
+      font-size: 2.5em;
+      color: var(--brown);
+      line-height: 1.4;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.8s ease 0.1s forwards;
+    }
+
+    .greeting .highlight {
+      color: var(--coral);
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 分隔装饰线 */
+    .divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin: 22px 0;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease 0.25s forwards;
+    }
+
+    .divider .line {
+      width: 56px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--coral), transparent);
+      opacity: 0.5;
+    }
+
+    .divider .icon {
+      color: var(--coral);
+      font-size: 17px;
+      animation: gentleBounce 2s ease-in-out infinite;
+    }
+
+    @keyframes gentleBounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-4px);
+      }
+    }
+
+    /* ===== 正文内容 ===== */
+    .message-body {
+      font-family: 'STKaiti', 'KaiTi', '华文楷体', 'Ma Shan Zheng', serif;
+      font-size: 1.35em;
+      color: var(--dark-brown);
+      line-height: 2.3;
+      text-align: center;
+    }
+
+    .message-line {
+      display: block;
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    .message-line.visible {
+      animation: softReveal 0.9s ease forwards;
+    }
+
+    .message-line .emoji-prefix {
+      display: inline-block;
+      margin-right: 5px;
+      font-size: 0.85em;
+    }
+
+    @keyframes softReveal {
+      0% {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 结尾 */
+    .closing {
+      font-family: 'STKaiti', 'KaiTi', '华文楷体', 'Liu Jian Mao Cao', 'Ma Shan Zheng', cursive;
+      font-size: 2.1em;
+      color: var(--coral);
+      text-align: center;
+      margin-top: 32px;
+      opacity: 0;
+      transform: scale(0.85);
+      letter-spacing: 2px;
+    }
+
+    .closing.revealed {
+      animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes popIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.85);
+      }
+
+      60% {
+        transform: scale(1.04);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .closing .heart {
+      display: inline-block;
+      animation: heartbeat 1.2s ease-in-out infinite;
+      color: var(--warm-pink);
+      font-size: 0.8em;
+    }
+
+    .closing .heart:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .closing .heart:nth-child(3) {
+      animation-delay: 0.6s;
+    }
+
+    @keyframes heartbeat {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      14% {
+        transform: scale(1.28);
+      }
+
+      28% {
+        transform: scale(1);
+      }
+
+      42% {
+        transform: scale(1.2);
+      }
+
+      56% {
+        transform: scale(1);
+      }
+    }
+
+    /* ===== 彩蛋区域 ===== */
+    .easter-eggs {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 26px;
+      margin-top: 38px;
+      padding-top: 26px;
+      border-top: 1px dashed rgba(232, 168, 124, 0.22);
+      flex-wrap: wrap;
+    }
+
+    .star-clickable {
+      font-size: 30px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+      position: relative;
+      will-change: transform;
+    }
+
+    .star-clickable:hover {
+      transform: scale(1.22);
+    }
+
+    .star-clickable.popping {
+      animation: starPop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes starPop {
+      0% {
+        transform: scale(1);
+      }
+
+      38% {
+        transform: scale(1.45) rotate(18deg);
+      }
+
+      100% {
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    .star-clickable .sparkle-burst {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      pointer-events: none;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(249, 213, 110, 0.7);
+      transform: translate(-50%, -50%);
+    }
+
+    .star-clickable .sparkle-burst.active {
+      animation: sparkleBurst 0.65s ease-out forwards;
+    }
+
+    @keyframes sparkleBurst {
+      0% {
+        width: 0;
+        height: 0;
+        background: rgba(249, 213, 110, 0.8);
+      }
+
+      45% {
+        width: 56px;
+        height: 56px;
+        background: rgba(249, 213, 110, 0.35);
+      }
+
+      100% {
+        width: 96px;
+        height: 96px;
+        background: transparent;
+      }
+    }
+
+    .paper-plane {
+      font-size: 34px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s ease;
+      filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1));
+      position: relative;
+    }
+
+    .paper-plane:active {
+      cursor: grabbing;
+    }
+
+    .paper-plane.dragging {
+      transform: scale(1.12);
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.22));
+    }
+
+    /* ===== 提示和签名 ===== */
+    .hint-text {
+      font-size: 0.82em;
+      color: var(--coral);
+      opacity: 0.55;
+      text-align: center;
+      margin-top: 18px;
+      font-family: 'STKaiti', 'KaiTi', 'Ma Shan Zheng', serif;
+      animation: fadeInUp 0.8s ease 9s forwards;
+      opacity: 0;
+    }
+
+    .signature {
+      text-align: right;
+      margin-top: 18px;
+      font-size: 0.95em;
+      color: var(--brown);
+      opacity: 0;
+      font-style: italic;
+      font-family: 'STKaiti', 'KaiTi', 'Ma Shan Zheng', serif;
+      animation: fadeInUp 0.8s ease 9.2s forwards;
+    }
+
+    /* ===== 响应式 ===== */
+    @media (max-width: 640px) {
+      body {
+        padding: 16px;
+        align-items: flex-start;
+        padding-top: 40px;
+      }
+
+      .main-card {
+        padding: 38px 22px 30px;
+        clip-path: polygon(3% 0, 9% 1%, 17% 0, 25% 1.5%, 33% 0, 42% 0.8%, 50% 0, 58% 1.2%,
+            67% 0, 75% 0.6%, 83% 0, 92% 1%, 100% 0,
+            100% 98%, 96% 100%, 89% 98%, 81% 100%, 72% 98.5%, 63% 100%,
+            54% 98%, 44% 100%, 35% 98.5%, 26% 100%, 17% 98%, 8% 100%, 0 100%, 0 1.5%);
+      }
+
+      .main-card::before {
+        top: 16px;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+      }
+
+      .greeting {
+        font-size: 1.9em;
+      }
+
+      .message-body {
+        font-size: 1.15em;
+        line-height: 2.1;
+      }
+
+      .closing {
+        font-size: 1.55em;
+      }
+
+      .music-toggle {
+        top: 16px;
+        right: 16px;
+        width: 42px;
+        height: 42px;
+        font-size: 17px;
+      }
+
+      .music-panel {
+        padding: 12px 16px;
+        gap: 10px;
+        bottom: 16px;
+      }
+
+      .music-panel .song-info {
+        font-size: 0.78em;
+      }
+
+      .easter-eggs {
+        gap: 18px;
+      }
+
+      .star-clickable {
+        font-size: 26px;
+      }
+
+      .paper-plane {
+        font-size: 30px;
+      }
+
+      .tape {
+        width: 56px;
+        height: 20px;
+      }
+
+      .tape.top-left {
+        left: 20px;
+      }
+
+      .tape.top-right {
+        right: 20px;
+      }
+
+      .sun-decor {
+        width: 38px;
+        height: 38px;
+      }
+
+      .sun-decor::before {
+        width: 68px;
+        height: 68px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .main-card {
+        padding: 30px 16px 24px;
+      }
+
+      .greeting {
+        font-size: 1.55em;
+      }
+
+      .message-body {
+        font-size: 1.02em;
+        line-height: 1.95;
+      }
+
+      .closing {
+        font-size: 1.3em;
+      }
+
+      .star-clickable {
+        font-size: 24px;
+      }
+
+      .paper-plane {
+        font-size: 28px;
+      }
+
+      .easter-eggs {
+        gap: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 飘落装饰 -->
+  <div class="floating-container" id="floatingContainer"></div>
+
+  <!-- 音乐按钮 -->
+  <button class="music-toggle" id="musicToggle" title="🎵 林俊杰 - 交换余生" aria-label="播放音乐">
+    🎵
+  </button>
+
+  <!-- 音乐播放器面板 -->
+  <div class="music-panel" id="musicPanel">
+    <div class="panel-header">
+      <div class="song-info">
+        <span class="song-title">🎶 交换余生</span>
+        <span class="artist"> — 林俊杰</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <a class="open-link" href="https://y.qq.com/n/ryqq/songDetail/000CdfvT1LMVP3" target="_blank"
+          rel="noopener">QQ音乐打开 ↗</a>
+        <button class="close-panel" id="closePanel" title="关闭">✕</button>
+      </div>
+    </div>
+    <audio id="musicAudio" controls preload="auto" loop>
+      <source src="chorus.mp3" type="audio/mpeg">
+      你的浏览器不支持音频播放
+    </audio>
+  </div>
+
+  <!-- 主体卡片 -->
+  <main class="main-card">
+    <div class="tape top-left"></div>
+    <div class="tape top-right"></div>
+
+    <!-- 标题 -->
+    <div class="header-section">
+      <div class="sun-decor"></div>
+      <h1 class="greeting">
+        致我<span class="highlight">亲爱的好朋友</span> 🌸
+      </h1>
+    </div>
+
+    <div class="divider">
+      <span class="line"></span>
+      <span class="icon">✿</span>
+      <span class="line"></span>
+    </div>
+
+    <!-- 正文 -->
+    <div class="message-body" id="messageBody">
+      <span class="message-line" data-delay="700"><span class="emoji-prefix">🧸</span>六一儿童节的意义是</span>
+      <span class="message-line" data-delay="1500">即使你渐渐成为一个大人</span>
+      <span class="message-line" data-delay="2300">但你依旧可以做个小朋友</span>
+      <span class="message-line" data-delay="3300"><span class="emoji-prefix">🍚</span>希望你好好吃饭 好好睡觉</span>
+      <span class="message-line" data-delay="4100"><span class="emoji-prefix">💪</span>好好照顾自己 好好保护自己</span>
+      <span class="message-line" data-delay="5100"><span class="emoji-prefix">😊</span>你一定要快乐 一定要开心</span>
+      <span class="message-line" data-delay="6100"><span class="emoji-prefix">🌟</span>希望你能够拥有直面未来的勇气</span>
+      <span class="message-line" data-delay="7100">虽是大人模样</span>
+      <span class="message-line" data-delay="7700">但希望我们心中仍有童话梦想 ✨</span>
+    </div>
+
+    <!-- 结尾 -->
+    <div class="closing" id="closingText">
+      <span class="heart">❤️</span> 六一快乐！天天快乐！ <span class="heart">❤️</span>
+    </div>
+
+    <!-- 彩蛋 -->
+    <div class="easter-eggs">
+      <span class="star-clickable" title="点我许愿~">⭐</span>
+      <span class="paper-plane" id="paperPlane" title="拖动纸飞机放飞梦想~" draggable="false">✈️</span>
+      <span class="star-clickable" title="点我许愿~">🌟</span>
+      <span class="star-clickable" title="点我许愿~">💫</span>
+      <span class="star-clickable" title="点我许愿~">✨</span>
+    </div>
+
+    <p class="hint-text">🖌️ 点星星许愿 ~ 拖动纸飞机放飞梦想 ~</p>
+    <p class="signature">— 你的好朋友chy ✍️</p>
+  </main>
+
+  <script>
+    (function () {
+      // ==================== 飘落动画 ====================
+      const floatingItems = ['🌸', '🍀', '✨', '🦋', '💮', '🌿', '⭐', '🍃', '💫', '🌼', '✿', '🕊️', '🌷', '🪷'];
+      const container = document.getElementById('floatingContainer');
+
+      function createFloatingItem() {
+        const el = document.createElement('span');
+        el.className = 'floating-item';
+        el.textContent = floatingItems[Math.floor(Math.random() * floatingItems.length)];
+        el.style.left = Math.random() * 94 + '%';
+        el.style.fontSize = (13 + Math.random() * 22) + 'px';
+        el.style.animationDuration = (9 + Math.random() * 16) + 's';
+        el.style.animationDelay = Math.random() * 10 + 's';
+        container.appendChild(el);
+
+        const totalTime = (parseFloat(el.style.animationDuration) + parseFloat(el.style.animationDelay)) * 1000;
+        setTimeout(() => {
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }, totalTime + 1500);
+      }
+
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => createFloatingItem(), i * 700);
+      }
+      setInterval(createFloatingItem, 2800);
+
+      // ==================== 文字逐句淡入 ====================
+      const messageLines = document.querySelectorAll('.message-line');
+      const closingText = document.getElementById('closingText');
+
+      const sortedLines = Array.from(messageLines).sort((a, b) =>
+        (parseInt(a.dataset.delay) || 0) - (parseInt(b.dataset.delay) || 0)
+      );
+
+      sortedLines.forEach(line => {
+        const delay = parseInt(line.dataset.delay) || 0;
+        setTimeout(() => line.classList.add('visible'), delay);
+      });
+
+      const lastDelay = sortedLines.length > 0
+        ? (parseInt(sortedLines[sortedLines.length - 1].dataset.delay) || 0) + 1200
+        : 8500;
+      setTimeout(() => closingText.classList.add('revealed'), lastDelay);
+
+      // ==================== 星星彩蛋 ====================
+      const stars = document.querySelectorAll('.star-clickable');
+      const starColors = ['#f9d56e', '#f0a8b8', '#a8d8ea', '#f4c7ab', '#a8c97e', '#e8a87c', '#c9b1d6', '#ffb347'];
+
+      stars.forEach(star => {
+        const burst = document.createElement('span');
+        burst.className = 'sparkle-burst';
+        star.appendChild(burst);
+
+        star.addEventListener('click', function () {
+          const newColor = starColors[Math.floor(Math.random() * starColors.length)];
+          this.style.color = newColor;
+          this.style.textShadow = `0 0 18px ${newColor}, 0 0 36px ${newColor}88`;
+
+          this.classList.remove('popping');
+          void this.offsetWidth;
+          this.classList.add('popping');
+
+          const burstEl = this.querySelector('.sparkle-burst');
+          burstEl.classList.remove('active');
+          void burstEl.offsetWidth;
+          burstEl.classList.add('active');
+
+          setTimeout(() => {
+            this.style.color = '';
+            this.style.textShadow = '';
+          }, 2800);
+
+          spawnMiniStars(this.getBoundingClientRect());
+        });
+      });
+
+      function spawnMiniStars(rect) {
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        for (let i = 0; i < 7; i++) {
+          const mini = document.createElement('span');
+          mini.textContent = ['✦', '✧', '⋆', '·', '✶'][Math.floor(Math.random() * 5)];
+          mini.style.cssText = [
+            'position:fixed',
+            `left:${cx}px`, `top:${cy}px`,
+            `font-size:${9 + Math.random() * 16}px`,
+            `color:${starColors[Math.floor(Math.random() * starColors.length)]}`,
+            'pointer-events:none', 'z-index:200',
+            `transition:all ${0.4 + Math.random() * 0.8}s cubic-bezier(0,0.65,0.3,1)`,
+            'opacity:1'
+          ].join(';');
+          document.body.appendChild(mini);
+
+          requestAnimationFrame(() => {
+            mini.style.transform = `translate(${(Math.random() - 0.5) * 130}px, ${-35 - Math.random() * 90}px) scale(0)`;
+            mini.style.opacity = '0';
+          });
+
+          setTimeout(() => {
+            if (mini.parentNode) mini.parentNode.removeChild(mini);
+          }, 1600);
+        }
+      }
+
+      // ==================== 拖动纸飞机 ====================
+      const plane = document.getElementById('paperPlane');
+      let isDragging = false;
+      let startX, startY, origLeft, origTop, planeClone = null;
+
+      function startDrag(clientX, clientY) {
+        isDragging = true;
+        startX = clientX;
+        startY = clientY;
+        plane.classList.add('dragging');
+
+        const rect = plane.getBoundingClientRect();
+        planeClone = plane.cloneNode(true);
+        planeClone.style.cssText = [
+          'position:fixed', `left:${rect.left}px`, `top:${rect.top}px`,
+          'z-index:300', 'pointer-events:none', 'font-size:34px',
+          'filter:drop-shadow(0 6px 16px rgba(0,0,0,0.28))',
+          'transform:rotate(-10deg)', 'transition:transform 0.08s ease'
+        ].join(';');
+        planeClone.classList.remove('dragging');
+        document.body.appendChild(planeClone);
+        origLeft = rect.left;
+        origTop = rect.top;
+        plane.style.opacity = '0.25';
+      }
+
+      function moveDrag(clientX, clientY) {
+        if (!isDragging || !planeClone) return;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        planeClone.style.left = (origLeft + dx) + 'px';
+        planeClone.style.top = (origTop + dy) + 'px';
+        planeClone.style.transform = `rotate(${dx * 0.18}deg)`;
+      }
+
+      function endDrag(clientX, clientY) {
+        if (!isDragging) return;
+        isDragging = false;
+        plane.classList.remove('dragging');
+        plane.style.opacity = '1';
+
+        if (planeClone) {
+          const dx = clientX - startX;
+          const dy = clientY - startY;
+          planeClone.style.transition = 'all 0.85s cubic-bezier(0.15,0.8,0.2,1)';
+          planeClone.style.left = (origLeft + dx * 2.8) + 'px';
+          planeClone.style.top = (origTop + dy * 2.8 - 180) + 'px';
+          planeClone.style.transform = 'rotate(28deg) scale(0.4)';
+          planeClone.style.opacity = '0';
+
+          setTimeout(() => {
+            if (planeClone && planeClone.parentNode) planeClone.parentNode.removeChild(planeClone);
+            planeClone = null;
+          }, 950);
+        }
+      }
+
+      plane.addEventListener('mousedown', e => { e.preventDefault(); startDrag(e.clientX, e.clientY); });
+      document.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+      document.addEventListener('mouseup', e => endDrag(e.clientX, e.clientY));
+
+      plane.addEventListener('touchstart', e => {
+        e.preventDefault();
+        startDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: false });
+      document.addEventListener('touchmove', e => {
+        if (isDragging) { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); }
+      }, { passive: false });
+      document.addEventListener('touchend', e => endDrag(
+        e.changedTouches ? e.changedTouches[0].clientX : startX,
+        e.changedTouches ? e.changedTouches[0].clientY : startY
+      ));
+
+      // ==================== 音乐播放器 ====================
+      const musicToggle = document.getElementById('musicToggle');
+      const musicAudio = document.getElementById('musicAudio');
+      const musicPanel = document.getElementById('musicPanel');
+      const closePanel = document.getElementById('closePanel');
+      let musicPlaying = false;
+
+      function showMusicUI() {
+        musicToggle.classList.add('playing');
+        musicPanel.classList.add('show');
+        musicAudio.play().catch(() => { });
+        musicPlaying = true;
+      }
+
+      function hideMusicUI() {
+        musicToggle.classList.remove('playing');
+        musicPanel.classList.remove('show');
+        musicAudio.pause();
+        musicPlaying = false;
+      }
+
+      musicToggle.addEventListener('click', function () {
+        if (musicPlaying) {
+          hideMusicUI();
+        } else {
+          showMusicUI();
+        }
+      });
+
+      closePanel.addEventListener('click', function (e) {
+        e.stopPropagation();
+        hideMusicUI();
+      });
+
+      // 音频播放结束时的处理（loop模式下不会触发，但保留）
+      musicAudio.addEventListener('ended', function () {
+        // loop自动处理
+      });
+
+      // 音乐按钮脉冲提示
+      setTimeout(() => {
+        musicToggle.style.boxShadow = '0 0 0 0 rgba(232,168,124,0.55)';
+        setTimeout(() => {
+          musicToggle.style.transition = 'box-shadow 0.7s ease';
+          musicToggle.style.boxShadow = '0 2px 12px rgba(94,64,55,0.1)';
+          setTimeout(() => { musicToggle.style.transition = 'all 0.35s cubic-bezier(0.4,0,0.2,1)'; }, 750);
+        }, 120);
+      }, 1800);
+
+    })();
+  </script>
+</body>
+
+</html>
